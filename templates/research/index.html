@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/colresizable@1.6.0/colResizable-1.6.min.js"></script>
+    <meta charset="UTF-8">
+    <title>Data Cleaning</title>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            width:90%;
+        }
+
+        th, td {
+            padding: 5px;
+            text-align: center;
+            word-break: break-all;
+            overflow: hidden;
+            white-space: nowrap;
+            /*text-overflow: ellipsis;*/
+            /*width:1px;*/
+
+        }
+
+        tr:first-child {
+            background-color: #ededed;
+        }
+
+        tr:not(:first-child):hover {
+            background-color: #ffff99;
+        }
+
+        .db {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: left;
+        }
+
+        table {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        .content {
+            width: 90%;
+            /*display: inline-block;*/
+        }
+
+        .operation {
+            position: fixed;
+            top: 7%;
+            left: 90%;
+            width: 100px;
+            height: 250px;
+            display: inline-block;
+        }
+
+        #display_box {
+            width: auto;
+            height: 40%;
+            padding: 5px;
+            text-align: center;
+            border: 1px solid black;
+        }
+
+        .opmenu {
+            position: relative;
+            display: table-caption;
+
+        }
+
+        #merge, #delete, #check {
+            display: none;
+        }
+        td:first-child, th:first-child {
+            display: none;
+        }
+.tiptext {
+    color:#069;
+    cursor:pointer;
+}
+.description {
+    display:none;
+    position:absolute;
+    margin-top:15px;
+    border:1px solid #000;
+    width:1000px;
+    height:400px;
+}
+    </style>
+</head>
+
+
+<body>
+{#    <div class="db">#}
+{#        <a href=".">#}
+{#            <button type="button">figures</button>#}
+{#        </a>#}
+{#        <a href="./bangmok_rows.html">#}
+{#            <button type="button">bangmok</button>#}
+{#        </a>#}
+{#        <a href=".">#}
+{#            <button type="button">article</button>#}
+{#        </a>#}
+{#        <a href=".">#}
+{#            <button type="button">records</button>#}
+{#        </a>#}
+{#    </div>#}
+<div class="content">
+    <div class="pagination">
+            <span class="step-links">
+                {% if figures.has_previous %}
+                    <a href="?page=1">&laquo; first</a>
+                    <a href="?page={{ figures.previous_page_number }}">previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ figures.number }} of {{ figures.paginator.num_pages }}.
+                </span>
+
+                {% if figures.has_next %}
+                    <a href="?page={{ figures.next_page_number }}">next</a>
+                    <a href="?page={{ figures.paginator.num_pages }}">last &raquo;</a>
+                {% endif %}
+            </span>
+    </div>
+    <table id="tb">
+        <tr>
+            {% for c,k in all_columns %}
+                {% if c == 'deleted' or c == 'checked' %}
+
+                {% else %}
+                <th>{{ c }}</th>
+                {%  endif %}
+            {% endfor %}
+        </tr>
+
+        {% for fig in figures %}
+            <tr id="{{ fig.manid }}" onclick="add_array(this.id)">
+            {% for field, val in fig %}
+
+                {%  if field == "url" %}
+                    <td><a class='tiptext' href="{%  url 'articles' pk=fig.pk %}" target="_blank">{{ fig.manid }}<iframe class = "description" src="{%  url 'articles' pk=fig.pk %}" width = "1000px" height = "1000px"></iframe></a></td>
+                {%  elif field != "url" %}
+                <td> {{ val }} </td>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+        </tr>
+    </table>
+
+    <div class="pagination">
+            <span class="step-links">
+                {% if figures.has_previous %}
+                    <a href="?page=1">&laquo; first</a>
+                    <a href="?page={{ figures.previous_page_number }}">previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ figures.number }} of {{ figures.paginator.num_pages }}.
+                </span>
+
+                {% if figures.has_next %}
+                    <a href="?page={{ figures.next_page_number }}">next</a>
+                    <a href="?page={{ figures.paginator.num_pages }}">last &raquo;</a>
+                {% endif %}
+            </span>
+
+    </div>
+    <div class="operation">
+        <div class="opmenu">
+            <form name="check" action="{% url 'index' %}" method="post">
+                {% csrf_token %}
+                <input type="text" name="check" id="check"/>
+
+                <button type="submit">check</button>
+            </form>
+
+            <form name="merge" action="{% url 'index' %}" method="post">
+                {% csrf_token %}
+                <input type="text" name="merge" id="merge"/>
+
+                <button type="submit">merge</button>
+            </form>
+
+            <form name="delete" action="{% url 'index' %}" method="post">
+                {% csrf_token %}
+                <input type="text" name="delete" id="delete"/>
+                <button type="submit">delete</button>
+            </form>
+            <a href="{{request.full_path}} ">
+                <button type="button">refresh</button>
+            </a>
+            <a>
+                <button type="button" onclick="clear_array()">flush</button>
+            </a>
+        </div>
+
+        <div id="display_box">
+
+        </div>
+    </div>
+
+</div>
+</div>
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+<script>
+  $("#tb").colResizable({liveDrag:true});
+
+    var ids = [];
+
+    function add_array(clicked_id) {
+
+
+        if (ids.indexOf(clicked_id) != -1) {
+            document.getElementById(clicked_id).style.backgroundColor = 'transparent';
+            ids.splice(ids.indexOf(clicked_id), 1);
+            document.getElementById("check").value = ids.join(", ");
+            document.getElementById("merge").value = ids.join(", ");
+            document.getElementById("delete").value = ids.join(", ");
+            t = document.querySelectorAll("#display_box");
+            for (var x = 0; x < t.length; x++)
+                t[x].innerHTML = ids.join("</br>");
+
+        }
+        else {
+            ids.push(clicked_id)
+            document.getElementById(clicked_id).style.backgroundColor = '#FFC0CB';
+            document.getElementById("check").value = ids.join(", ");
+            document.getElementById("merge").value = ids.join(", ");
+            document.getElementById("delete").value = ids.join(", ");
+            t = document.querySelectorAll("#display_box");
+            for (var x = 0; x < t.length; x++)
+                t[x].innerHTML = ids.join("</br>");
+        }
+    }
+
+    function clear_array() {
+        ids.length = 0;
+        document.getElementById("check").value = ids.join(", ");
+        document.getElementById("merge").value = ids.join(", ");
+            document.getElementById("delete").value = ids.join(", ");
+        t = document.querySelectorAll("#display_box");
+        for (var x = 0; x < t.length; x++)
+            t[x].innerHTML = ids.join("</br>");
+        trs = document.querySelectorAll("tr:not(:first-child)");
+        for (var x = 0; x < trs.length; x++)
+            trs[x].style.backgroundColor = 'transparent';
+
+    }
+$(".tiptext").mouseover(function() {
+    $(this).children(".description").show();
+}).mouseout(function() {
+    $(this).children(".description").hide();
+});
+</script>
+</body>
+</html>

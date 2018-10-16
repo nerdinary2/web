@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{fig.0.korname}}</title>
+</head>
+<style>
+    body{
+        margin-left: 5%;
+        background-color: white;
+    }
+    .paragraph {
+	font-size:1em;
+	line-height:1.6;
+	margin-bottom:1.3em;
+        width: 80%;
+        text-indent: 1.5em;
+	}
+    .highlight {
+  background-color: orange;
+        font-size:1.5em;
+}
+</style>
+<body>
+{% if articles|length == 0 %}
+<h1>Not Found!</h1>
+{% endif %}
+
+{% for article in articles %}
+    <h3>{{ article.title }}</h3>
+    <h4>{{ article.king }}</h4>
+    <h4>음력 : {{ article.date }}</h4>
+    <h4>양력 : {{ article.soldate }}</h4>
+    <div class="paragraph">
+    {{ article.korean }}
+    </div>
+
+{% endfor %}
+
+<script>
+    var figname = "{{ fig.0.korname }}";
+    var re = new RegExp(figname, "g");
+    {#var paragraph = document.getElementsByClassName("paragraph");#}
+    document.body.innerHTML = document.body.innerHTML.replace(re,"<span class='highlight'>"+figname+"</span>");
+
+</script>
+</body>
+</html>

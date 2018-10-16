@@ -1,0 +1,5 @@
+USER = 'dhchoi'
+PASSWORD = 'ehdgur1959'
+HOST = '143.248.109.99'
+DB = 'forest'
+PORT = '5432'
